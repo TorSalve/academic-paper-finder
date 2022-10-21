@@ -12,75 +12,97 @@ import progressbar
 import sys
 import PyPDF2
 import warnings
+from urllib.parse import urlencode
+
 
 class Fetcher:
-    def __init__(self, search_parameters={}, load_from='cache', **kwargs):
+    def __init__(self, search_parameters={}, load_from="cache", **kwargs):
         self.load_from = load_from
-        self.name = kwargs.get('name', 'finder')
-        self.cache_folder = kwargs.get('cache_folder', './cache')
-        self.headers = kwargs.get('headers', {})
-        
-        self.per_page = kwargs.get('per_page', 500)
+        self.name = kwargs.get("name", "finder")
+        self.cache_folder = kwargs.get("cache_folder", "./cache")
+        self.headers = kwargs.get("headers", {})
+
+        self.per_page = kwargs.get("per_page", 500)
 
         self.search_parameters = search_parameters
-        self.config_name = kwargs.get('config_name', self.name)
-        
+        self.config_name = kwargs.get("config_name", self.name)
+
         config_path = "./configs/%s.json" % self.config_name
         with open(config_path, "r") as f:
             self.config = json.load(f)
-        
-        self.list_is_json = self.get_config('urls.list.expect-json', False)
-        self.paper_is_json = self.get_config('urls.paper.expect-json', False)
-        self.per_page = self.get_config('urls.list.per-page')
 
-        self.preprocessing_paper = self.get_config("preprocessing.paper", []) + kwargs.get('preprocessing_paper', [])
-        self.preprocessing_list = self.get_config("preprocessing.list", []) + kwargs.get('preprocessing_list', [])
-        self.postprocessing_paper = self.get_config("postprocessing.paper", []) + kwargs.get('postprocessing_paper', [])
-        self.postprocessing_list = self.get_config("postprocessing.list", []) + kwargs.get('postprocessing_list', [])
+        self.list_is_json = self.get_config("urls.list.expect-json", False)
+        self.paper_is_json = self.get_config("urls.paper.expect-json", False)
+        self.per_page = self.get_config("urls.list.per-page")
 
-        self.restrict_identifiers_to = kwargs.get('restrict_identifiers_to', [])
+        self.preprocessing_paper = self.get_config(
+            "preprocessing.paper", []
+        ) + kwargs.get("preprocessing_paper", [])
+        self.preprocessing_list = self.get_config(
+            "preprocessing.list", []
+        ) + kwargs.get("preprocessing_list", [])
+        self.postprocessing_paper = self.get_config(
+            "postprocessing.paper", []
+        ) + kwargs.get("postprocessing_paper", [])
+        self.postprocessing_list = self.get_config(
+            "postprocessing.list", []
+        ) + kwargs.get("postprocessing_list", [])
+
+        self.restrict_identifiers_to = kwargs.get("restrict_identifiers_to", [])
 
     @property
     def header_user_agent(self):
-        return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36'
+        return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
 
     def list_file_name(self, page):
-        return "%s/%s/list/%s/%s.html" % (self.cache_folder, self.config_name, self.name, 'page-%d' % page)
+        return "%s/%s/list/%s/%s.html" % (
+            self.cache_folder,
+            self.config_name,
+            self.name,
+            "page-%d" % page,
+        )
 
     def paper_file_name(self, identifier):
         safe_identifier = h.safe_filename(identifier)
-        return "%s/%s/papers/%s.html" % (self.cache_folder, self.config_name, safe_identifier)
-    
+        return "%s/%s/papers/%s.html" % (
+            self.cache_folder,
+            self.config_name,
+            safe_identifier,
+        )
+
     def pdf_file_name(self, identifier, only_filename=False):
         safe_identifier = h.safe_filename(identifier)
         filename = "%s.pdf" % safe_identifier
-        if only_filename: return filename
+        if only_filename:
+            return filename
         return "%s/%s/pdfs/%s" % (self.cache_folder, self.config_name, filename)
 
     def result_file_name(self):
         return "%s/%s/result_%s.json" % (self.cache_folder, self.config_name, self.name)
 
     def url_get(self, url, payload={}, headers={}):
-        headers = { 'user-agent': self.header_user_agent, **headers }
+        headers = {"user-agent": self.header_user_agent, **headers}
         return requests.get(h.url_base_with_path(url), headers=headers, params=payload)
 
     def url_post_json(self, url, payload={}, headers={}):
-        headers = { 
-            'user-agent': self.header_user_agent,
-            'accept': '*/*',
-            'content-type': 'application/json',
+        headers = {
+            "user-agent": self.header_user_agent,
+            "accept": "*/*",
+            "content-type": "application/json",
             **self.headers,
-            **headers
+            **headers,
         }
-        return requests.post(h.url_base_with_path(url), headers=headers, data=json.dumps(payload))
+        return requests.post(
+            h.url_base_with_path(url), headers=headers, data=json.dumps(payload)
+        )
 
     def url_post(self, url, payload={}, headers={}):
         headers = {
-            'user-agent': self.header_user_agent,
-            'accept': '*/*',
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            "user-agent": self.header_user_agent,
+            "accept": "*/*",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             **self.headers,
-            **headers
+            **headers,
         }
         return requests.post(h.url_base_with_path(url), headers=headers, data=payload)
 
@@ -98,43 +120,58 @@ class Fetcher:
         return h.check_file_exists(self.list_file_name(page))
 
     def fetch_list(self, page):
-        if (self.load_from == 'cache'):
-            if(self.list_file_exists(page)): return self.from_cache(self.list_file_name(page), self.list_is_json)
-            else: return self.from_url_list(page)
-        elif (self.load_from == 'url'): return self.from_url_list(page)
-        else: raise Exception("load_from could not be found")
+        if self.load_from == "cache":
+            if self.list_file_exists(page):
+                return self.from_cache(self.list_file_name(page), self.list_is_json)
+            else:
+                return self.from_url_list(page)
+        elif self.load_from == "url":
+            return self.from_url_list(page)
+        else:
+            raise Exception("load_from could not be found")
 
     def fetch_paper(self, identifier):
-        if (self.load_from == 'cache'):
-            if(self.paper_file_exists(identifier)): return self.from_cache(self.paper_file_name(identifier), self.paper_is_json)
-            else: return self.from_url_paper(identifier)
-        elif (self.load_from == 'url'): return self.from_url_paper(identifier)
-        else: raise Exception("load_from could not be found")
+        if self.load_from == "cache":
+            if self.paper_file_exists(identifier):
+                return self.from_cache(
+                    self.paper_file_name(identifier), self.paper_is_json
+                )
+            else:
+                return self.from_url_paper(identifier)
+        elif self.load_from == "url":
+            return self.from_url_paper(identifier)
+        else:
+            raise Exception("load_from could not be found")
 
     def fetch_pdf(self, identifier):
-        if (self.load_from == 'cache'):
-            if(self.pdf_file_exists(identifier)): 
-                with open(self.pdf_file_name(identifier), "rb") as f: return f.read()
-            else: return self.from_url_pdf(identifier)
-        elif (self.load_from == 'url'): return self.from_url_pdf(identifier)
-        else: raise Exception("load_from could not be found")
+        if self.load_from == "cache":
+            if self.pdf_file_exists(identifier):
+                with open(self.pdf_file_name(identifier), "rb") as f:
+                    return f.read()
+            else:
+                return self.from_url_pdf(identifier)
+        elif self.load_from == "url":
+            return self.from_url_pdf(identifier)
+        else:
+            raise Exception("load_from could not be found")
 
     def from_cache(self, path, is_json):
         html = h.read_file(path)
         should_not_be_decoded = not is_json or isinstance(html, dict)
         return html if should_not_be_decoded else json.loads(html)
-    
+
     def from_url_pdf(self, identifier):
-        sleep_for = self.get_config('sleep_between_requests')
+        sleep_for = self.get_config("sleep_between_requests")
         r = requests.get(self.pdf_url(identifier))
         file_name = self.pdf_file_name(identifier)
         h.ensure_path_exists(file_name)
-        with open(file_name, "wb") as f: f.write(r.content)
+        with open(file_name, "wb") as f:
+            f.write(r.content)
         time.sleep(sleep_for)
         return r.content
 
     def from_url_list(self, page):
-        sleep_for = self.get_config('sleep_between_requests')
+        sleep_for = self.get_config("sleep_between_requests")
         html = self.fetch_list_from_url(page)
         h.write_file(self.list_file_name(page), html)
         shouldNotBeDecoded = not self.list_is_json or isinstance(html, dict)
@@ -142,34 +179,41 @@ class Fetcher:
         return html if shouldNotBeDecoded else json.loads(html)
 
     def from_url_paper(self, identifier):
-        sleep_for = self.get_config('sleep_between_requests')
+        sleep_for = self.get_config("sleep_between_requests")
         html = self.fetch_paper_from_url(identifier)
         h.write_file(self.paper_file_name(identifier), html)
         shouldNotBeDecoded = not self.paper_is_json or isinstance(html, dict)
         time.sleep(sleep_for)
         return html if shouldNotBeDecoded else json.loads(html)
-    
+
     def re_list(self, pattern, html):
-        if len(pattern) == '': return []
-        return h.unique(map(
-            lambda s: h.strip_html(s).replace("\n", " ").strip(),
-            re.findall(pattern, html)
-        ))
-    
+        if len(pattern) == "":
+            return []
+        return h.unique(
+            map(
+                lambda s: h.strip_html(s).replace("\n", " ").strip(),
+                re.findall(pattern, html),
+            )
+        )
+
     def re_item(self, pattern, html):
-        if len(pattern) == '': return ''
+        if len(pattern) == "":
+            return ""
         find = re.findall(pattern, html)
-        if len(find) <= 0: return ''
+        if len(find) <= 0:
+            return ""
         f = find[0] if not isinstance(find[0], tuple) else find[0][0]
         return h.strip_html(f).replace("\n", " ").strip()
 
-    def get_config(self, field, default=''):
-        try: return h.get_dict_field(self.config, field)
-        except ValueError: return default
+    def get_config(self, field, default=""):
+        try:
+            return h.get_dict_field(self.config, field)
+        except ValueError:
+            return default
 
     def list_url(self, page):
         return h.insert_identifier(self.get_config("urls.list.url"), page, "page")
-    
+
     def paper_url(self, identifier):
         return h.insert_identifier(self.get_config("urls.paper.url"), identifier)
 
@@ -178,28 +222,33 @@ class Fetcher:
 
     def identifiers(self, _list):
         if self.list_is_json:
-            return h.get_dict_field(_list, self.get_config('json.list.identifiers'))
+            return h.get_dict_field(_list, self.get_config("json.list.identifiers"))
         else:
             pattern = self.get_config("regex.list.identifiers")
             return self.re_list(pattern, _list)
-    
+
     def total_number_of_results(self, _list):
         if self.list_is_json:
-            scount = h.get_dict_field(_list, self.get_config('json.list.total_number_of_results'))
+            scount = h.get_dict_field(
+                _list, self.get_config("json.list.total_number_of_results")
+            )
         else:
             pattern = self.get_config("regex.list.total_number_of_results")
             scount = self.re_item(pattern, _list)
-            scount = scount.replace(',', '')
-        try: count = int(scount)
-        except ValueError: count = 0
+            scount = scount.replace(",", "")
+        try:
+            count = int(scount)
+        except ValueError:
+            count = 0
         return count
 
     def fetch_list_from_url(self, page):
         payload = self.search_parameters
 
         per_page_param = self.get_config("urls.list.params.per-page", "")
-        if not per_page_param == "": payload[per_page_param] = self.per_page
-        
+        if not per_page_param == "":
+            payload[per_page_param] = self.per_page
+
         page_param = self.get_config("urls.list.params.page", "")
         if not page_param == "":
             if self.get_config("urls.list.params.offset", False):
@@ -209,8 +258,9 @@ class Fetcher:
         method = self.get_config("urls.list.method", "GET")
         url = self.list_url(page)
         if method == "GET":
+            print("Fetching: %s?%s" % (h.url_base_with_path(url), urlencode(payload)))
             return self.url_get(url, payload).text
-        elif method == "POST" and not self.get_config('urls.list.send-json', False):
+        elif method == "POST" and not self.get_config("urls.list.send-json", False):
             return self.url_post(url, payload).text
         else:
             return self.url_post_json(url, payload).json()
@@ -224,15 +274,24 @@ class Fetcher:
         else:
             return self.url_post_json(self.paper_url(identifier)).json()
 
-    def from_paper(self, key, _paper, item=True, default=''):
+    def from_paper(self, key, _paper, item=True, default=""):
         fun = self.re_item if item else self.re_list
-        is_pre_json = 'embedded_json' in self.get_config("preprocessing.paper.*.type", [])
-        return fun(self.get_config("regex.paper.%s" % key, default=default), _paper) \
-            if not is_pre_json else \
-            h.get_dict_field(_paper, self.get_config("json.paper.%s" % key), '')
+        is_pre_json = "embedded_json" in self.get_config(
+            "preprocessing.paper.*.type", []
+        )
+        return (
+            fun(self.get_config("regex.paper.%s" % key, default=default), _paper)
+            if not is_pre_json
+            else h.get_dict_field(_paper, self.get_config("json.paper.%s" % key), "")
+        )
 
     def authors(self, _paper):
-        return list(map(lambda s: s.title(), h.flatten(self.from_paper("authors", _paper, False))))
+        return list(
+            map(
+                lambda s: s.title(),
+                h.flatten(self.from_paper("authors", _paper, False)),
+            )
+        )
 
     def keywords(self, _paper):
         return h.flatten(self.from_paper("keywords", _paper, False))
@@ -265,10 +324,10 @@ class Fetcher:
         if len(self.preprocessing_paper) > 0:
             for pre in self.preprocessing_paper:
                 if pre["type"] == "embedded_json":
-                    raw_paper = self.re_item(pre['regex'], _paper)
+                    raw_paper = self.re_item(pre["regex"], _paper)
                     _paper = json.loads(raw_paper)
         return _paper
-    
+
     def preprocess_list(self, _list):
         if len(self.preprocessing_list) > 0:
             for _, _ in enumerate(self.preprocessing_list):
@@ -279,28 +338,30 @@ class Fetcher:
         if len(self.postprocessing_paper) > 0:
             for i, post in enumerate(self.postprocessing_paper):
                 if post["type"] == "query":
-                    query = h.get_dict_field(self.postprocessing_paper, f"{i}.query", {})
+                    query = h.get_dict_field(
+                        self.postprocessing_paper, f"{i}.query", {}
+                    )
                     f = h.analyze_query(paper, query)
                     paper = paper if f else None
         return paper
-    
+
     def parse_paper(self, identifier, _paper):
         _paper = self.preprocess_paper(_paper)
         paper = {
-            'title': self.title(_paper),
-            'authors': self.authors(_paper),
-            'abstract': self.abstract(_paper),
-            'keywords': self.keywords(_paper),
-            'published_in': self.published_in(_paper),
-            'publication_date': self.publication_date(_paper),
-            'citations': self.citations(_paper),
-            'isbn': self.isbn(_paper),
-            'doi': self.doi(_paper),
-            'doi_url': self.doi_url(_paper),
-            'pdf_url': self.pdf_url(identifier),
-            'pdf_file_name': self.pdf_file_name(identifier, True),
-            'paper_url': self.paper_url(identifier),
-            'identifier': identifier
+            "title": self.title(_paper),
+            "authors": self.authors(_paper),
+            "abstract": self.abstract(_paper),
+            "keywords": self.keywords(_paper),
+            "published_in": self.published_in(_paper),
+            "publication_date": self.publication_date(_paper),
+            "citations": self.citations(_paper),
+            "isbn": self.isbn(_paper),
+            "doi": self.doi(_paper),
+            "doi_url": self.doi_url(_paper),
+            "pdf_url": self.pdf_url(identifier),
+            "pdf_file_name": self.pdf_file_name(identifier, True),
+            "paper_url": self.paper_url(identifier),
+            "identifier": identifier,
         }
         paper = self.postprocess_paper(paper)
         return paper
@@ -311,7 +372,11 @@ class Fetcher:
         papers = []
         for i, identifier in enumerate(identifiers):
             sub.update(i)
-            if len(self.restrict_identifiers_to) > 0 and identifier not in self.restrict_identifiers_to: continue
+            if (
+                len(self.restrict_identifiers_to) > 0
+                and identifier not in self.restrict_identifiers_to
+            ):
+                continue
             _paper = self.fetch_paper(identifier)
             paper = self.parse_paper(identifier, _paper)
             if paper is not None:
@@ -327,66 +392,91 @@ class Fetcher:
 
     def run(self):
         tic = time.perf_counter()
-        print("", "---------------", "starting on %s - %s" % (self.config_name, self.name), sep="\n")
-        
+        print(
+            "",
+            "---------------",
+            "starting on %s - %s" % (self.config_name, self.name),
+            sep="\n",
+        )
+
         print(" - fetching first page")
-        start_page = self.get_config('urls.list.start-page', 0)
+        start_page = self.get_config("urls.list.start-page", 0)
         _list, papers = self.fetch_parse_list(start_page)
-        result = { 
-            'papers': [papers],
-            'total_results': self.total_number_of_results(_list)
+        result = {
+            "papers": [papers],
+            "total_results": self.total_number_of_results(_list),
         }
-        
-        pages_to_fetch = math.ceil(result['total_results'] / self.per_page) - 1
 
-        sleep_for = self.get_config('sleep_between_requests')
-        print("This will take at least %.2f minutes if the cache is clean" % ((result['total_results'] * sleep_for) / 60))
+        pages_to_fetch = math.ceil(result["total_results"] / self.per_page) - 1
 
-        if ((pages_to_fetch) > 0):
+        sleep_for = self.get_config("sleep_between_requests")
+        print(
+            "This will take at least %.2f minutes if the cache is clean"
+            % ((result["total_results"] * sleep_for) / 60)
+        )
+
+        if (pages_to_fetch) > 0:
             print(" - fetching the rest of the pages: %d" % (pages_to_fetch))
-            
+
             h.console_down()
-            total = h.get_progressbar(pages_to_fetch, 'lists')
+            total = h.get_progressbar(pages_to_fetch, "lists")
             total.start()
-            for i, page in enumerate(range(start_page + 1, pages_to_fetch + start_page + 1)):
+            for i, page in enumerate(
+                range(start_page + 1, pages_to_fetch + start_page + 1)
+            ):
                 total.update(i)
                 # if page >= 2: break
                 h.console_up()
                 _, papers = self.fetch_parse_list(page)
-                result['papers'].append(papers)
+                result["papers"].append(papers)
             total.finish()
-        
-        result['papers'] = h.flatten(result['papers'])
-        result['total_filtered_results'] = len(result['papers'])
-        result['total_pages'] = pages_to_fetch + 1
+
+        result["papers"] = h.flatten(result["papers"])
+        result["total_filtered_results"] = len(result["papers"])
+        result["total_pages"] = pages_to_fetch + 1
         h.write_json_file(self.result_file_name(), result)
         toc = time.perf_counter()
         h.console_down()
-        print(f"Finished {self.config_name} - {self.name} in {toc - tic:0.4f} seconds\n")
+        print(
+            f"Finished {self.config_name} - {self.name} in {toc - tic:0.4f} seconds\n"
+        )
         return result
 
-    def export_results_to_csv(self, fields=[], file_path='./total.csv', override=False, defaults={}, sort_by=None):
+    def export_results_to_csv(
+        self,
+        fields=[],
+        file_path="./total.csv",
+        override=False,
+        defaults={},
+        sort_by=None,
+    ):
         result = h.read_json_file(self.result_file_name())
-        if not 'papers' in result: raise Exception("Illformed %s" % self.result_file_name())
-        if len(result['papers']) <= 0: return
-        if len(fields) <= 0: fields = list(result['papers'][0].keys())
+        if not "papers" in result:
+            raise Exception("Illformed %s" % self.result_file_name())
+        if len(result["papers"]) <= 0:
+            return
+        if len(fields) <= 0:
+            fields = list(result["papers"][0].keys())
 
         if h.check_file_exists(file_path) and not override:
             df = pd.read_csv(file_path)
         else:
             df = pd.DataFrame(columns=fields)
-        
+
         print(f"Exporting {self.name} - {self.config_name} paper to csv.")
-        total = h.get_progressbar(len(result['papers']), 'pdf')
+        total = h.get_progressbar(len(result["papers"]), "pdf")
         total.start()
-        for i, paper in enumerate(result['papers']):
-            if len(self.restrict_identifiers_to) > 0 and paper['identifier'] not in self.restrict_identifiers_to: continue
+        for i, paper in enumerate(result["papers"]):
+            if (
+                len(self.restrict_identifiers_to) > 0
+                and paper["identifier"] not in self.restrict_identifiers_to
+            ):
+                continue
             paper_dict = {
-                k: ( paper[k] if not isinstance(paper[k], list) else ", ".join(paper[k]) ) 
-                    if k in paper else
-                    ( defaults[k] if k in paper else None )
-                for k 
-                in fields
+                k: (paper[k] if not isinstance(paper[k], list) else ", ".join(paper[k]))
+                if k in paper
+                else (defaults[k] if k in paper else None)
+                for k in fields
             }
             df = df.append(paper_dict, ignore_index=True)
             total.update(i)
@@ -395,55 +485,71 @@ class Fetcher:
         if sort_by is not None:
             if not isinstance(sort_by, list):
                 sort_by = [sort_by]
-            
+
             if all(map(lambda x: x in fields, sort_by)):
                 df.sort_values(by=sort_by)
             else:
-                warnings.warn(f"could not find sorting field: {str(sort_by)} is not completely in {str(fields)}")
+                warnings.warn(
+                    f"could not find sorting field: {str(sort_by)} is not completely in {str(fields)}"
+                )
 
         df.to_csv(file_path, index=False)
 
-    def download_pdfs(self, save_folder='./pdfs', save_name="identifier", override=False):
+    def download_pdfs(
+        self, save_folder="./pdfs", save_name="identifier", override=False
+    ):
         result = h.read_json_file(self.result_file_name())
-        if not 'papers' in result: raise Exception("Illformed %s" % self.result_file_name())
-        if len(result['papers']) <= 0: return
+        if not "papers" in result:
+            raise Exception("Illformed %s" % self.result_file_name())
+        if len(result["papers"]) <= 0:
+            return
 
         save_folder = f"{save_folder}"
         h.ensure_path_exists(save_folder, True)
-        
-        sleep_for = self.get_config('sleep_between_requests')
+
+        sleep_for = self.get_config("sleep_between_requests")
 
         print(f"Downloading {self.name} - {self.config_name} paper pdfs.")
-        sleep_for = self.get_config('sleep_between_requests')
-        print("This will take at least %.2f hours if all papers need to be downloaded" % ((result['total_results'] * sleep_for) / 60 / 60))
+        sleep_for = self.get_config("sleep_between_requests")
+        print(
+            "This will take at least %.2f hours if all papers need to be downloaded"
+            % ((result["total_results"] * sleep_for) / 60 / 60)
+        )
 
-        total = h.get_progressbar(len(result['papers']), 'pdf')
+        total = h.get_progressbar(len(result["papers"]), "pdf")
         total.start()
-        for i, paper in enumerate(result['papers']):
+        for i, paper in enumerate(result["papers"]):
             total.update(i)
-            if len(self.restrict_identifiers_to) > 0 and paper['identifier'] not in self.restrict_identifiers_to: continue
-            
-            num_pages_key = 'pdf_num_pages'
-            if num_pages_key in paper and not override: continue
+            if (
+                len(self.restrict_identifiers_to) > 0
+                and paper["identifier"] not in self.restrict_identifiers_to
+            ):
+                continue
+
+            num_pages_key = "pdf_num_pages"
+            if num_pages_key in paper and not override:
+                continue
 
             file_name = h.safe_filename(f"{paper['identifier']}.pdf")
             file_name = f"{save_folder}/{file_name}"
-            
-            content = self.fetch_pdf(paper['identifier'])
-            with open(file_name, "wb") as f: f.write(content)
+
+            content = self.fetch_pdf(paper["identifier"])
+            with open(file_name, "wb") as f:
+                f.write(content)
 
             try:
                 pdf_file = io.BytesIO(content)
                 pdf_reader = PyPDF2.PdfFileReader(pdf_file)
                 paper[num_pages_key] = pdf_reader.getNumPages()
-                result['papers'][i] = paper
+                result["papers"][i] = paper
             except PyPDF2.utils.PdfReadError:
-                os.remove(self.pdf_file_name(paper['identifier']))
+                os.remove(self.pdf_file_name(paper["identifier"]))
                 h.console_down()
                 print(f"Reading PDF failed: id {paper['identifier']}")
-            
+
         total.finish()
         h.write_json_file(self.result_file_name(), result)
+
 
 if __name__ == "__main__":
 
@@ -469,17 +575,33 @@ if __name__ == "__main__":
         #     "name": "chi",
         #     "config_name": "acm",
         #     "search_parameters": {
-        #         'fillQuickSearch': 'false',
-        #         'ContentItemType': 'research-article',
-        #         'SpecifiedLevelConceptID': '119596',
-        #         'expand': 'dl',
-        #         'AfterMonth': '1',
-        #         'AfterYear': '2000',
-        #         'BeforeMonth': '12',
-        #         'BeforeYear': '2019',
-        #         'AllField': 'Title:((select* OR manipulat*) AND ("virtual" OR "VR")) OR Abstract:((select* OR manipulat*) AND ("virtual" OR "VR"))'
-        #     }
+        #         "fillQuickSearch": "false",
+        #         "ContentItemType": "research-article",
+        #         "SpecifiedLevelConceptID": "119596",
+        #         "expand": "dl",
+        #         "AfterMonth": "1",
+        #         "AfterYear": "2019",
+        #         "BeforeMonth": "12",
+        #         "BeforeYear": "2022",
+        #         "AllField": 'Title:((select* OR manipulat*) AND ("virtual" OR "VR")) OR Abstract:((select* OR manipulat*) AND ("virtual" OR "VR"))',
+        #     },
         # },
+        {
+            "name": "chi",
+            "config_name": "acm",
+            "search_parameters": {
+                "fillQuickSearch": "false",
+                "target": "advanced",
+                "ContentItemType": "research-article",
+                "SpecifiedLevelConceptID": "119596",  # identifier for CHI conference
+                "expand": "dl",
+                "AfterMonth": "1",
+                "AfterYear": "2021",
+                "BeforeMonth": "12",
+                "BeforeYear": "2021",
+                "AllField": "(virtual reality)",
+            },
+        },
         # # IEEEVR
         # {
         #     "name": "ieeevr",
@@ -499,61 +621,61 @@ if __name__ == "__main__":
         #     }
         # },
         # Virtual Reality (Journal)
-        {
-            "name": "vr",
-            "config_name": "springer",
-            "search_parameters": {
-                'query': '((select* OR manipulat*) AND ("virtual" OR "VR"))',
-                'facet-start-year': '2000',
-                'date-facet-mode': 'between',
-                'facet-end-year': '2019',
-                'showAll[0]': 'false',
-                'showAll[1]': 'true',
-                'search-within': 'Journal',
-                'facet-journal-id': '10055',
-            },
-            "postprocessing_paper": [
-                {
-                    "type": "query",
-                    "query": {
-                        "should": [
-                            { 
-                                "must": [
-                                    {
-                                        "should": [
-                                            {"match": { "title": "select*" }},
-                                            {"match": { "title": "manipulat*" }}
-                                        ]
-                                    },
-                                    {
-                                        "should": [
-                                            {"match": { "title": "virtual" }},
-                                            {"match": { "title": "VR" }}
-                                        ]
-                                    }
-                                ]
-                            },
-                            { 
-                                "must": [
-                                    {
-                                        "should": [
-                                            {"match": { "abstract": "select*" }},
-                                            {"match": { "abstract": "manipulat*" }}
-                                        ]
-                                    },
-                                    {
-                                        "should": [
-                                            {"match": { "abstract": "virtual" }},
-                                            {"match": { "abstract": "VR" }}
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            ]
-        },
+        # {
+        #     "name": "vr",
+        #     "config_name": "springer",
+        #     "search_parameters": {
+        #         'query': '((select* OR manipulat*) AND ("virtual" OR "VR"))',
+        #         'facet-start-year': '2000',
+        #         'date-facet-mode': 'between',
+        #         'facet-end-year': '2019',
+        #         'showAll[0]': 'false',
+        #         'showAll[1]': 'true',
+        #         'search-within': 'Journal',
+        #         'facet-journal-id': '10055',
+        #     },
+        #     "postprocessing_paper": [
+        #         {
+        #             "type": "query",
+        #             "query": {
+        #                 "should": [
+        #                     {
+        #                         "must": [
+        #                             {
+        #                                 "should": [
+        #                                     {"match": { "title": "select*" }},
+        #                                     {"match": { "title": "manipulat*" }}
+        #                                 ]
+        #                             },
+        #                             {
+        #                                 "should": [
+        #                                     {"match": { "title": "virtual" }},
+        #                                     {"match": { "title": "VR" }}
+        #                                 ]
+        #                             }
+        #                         ]
+        #                     },
+        #                     {
+        #                         "must": [
+        #                             {
+        #                                 "should": [
+        #                                     {"match": { "abstract": "select*" }},
+        #                                     {"match": { "abstract": "manipulat*" }}
+        #                                 ]
+        #                             },
+        #                             {
+        #                                 "should": [
+        #                                     {"match": { "abstract": "virtual" }},
+        #                                     {"match": { "abstract": "VR" }}
+        #                                 ]
+        #                             }
+        #                         ]
+        #                     }
+        #                 ]
+        #             }
+        #         }
+        #     ]
+        # },
         # # VRST
         # {
         #     "name": "vrst",
@@ -615,19 +737,25 @@ if __name__ == "__main__":
     ]
 
     tic = time.perf_counter()
-    
-    identifier_file = './identifiers.csvs'
-    restrict = pd.read_csv(identifier_file, header=None)[0].to_list() if h.check_file_exists(identifier_file) else []
+
+    identifier_file = "./identifiers.csvs"
+    restrict = (
+        pd.read_csv(identifier_file, header=None)[0].to_list()
+        if h.check_file_exists(identifier_file)
+        else []
+    )
 
     fp = "./restricted.csv"
-    fp2 = './pdf_pages.csv'
+    fp2 = "./pdf_pages.csv"
     # os.remove(fp)
     # os.remove(fp2)
 
     for finder in finders:
-        find = Fetcher(restrict_identifiers_to=restrict, **finder)
+        find = Fetcher(restrict_identifiers_to=restrict, load_from="url", **finder)
         find.run()
-        # find.export_results_to_csv(['pdf_file_name', 'title', 'authors', 'doi_url'], file_path=fp)
+        find.export_results_to_csv(
+            ["pdf_file_name", "title", "authors", "doi_url"], file_path=fp
+        )
         # find.export_results_to_csv(['title', 'pdf_url'])
         # find.download_pdfs(save_folder='./pdfs/codingExercise')
         # find.export_results_to_csv(['pdf_num_pages'], file_path=fp2, defaults={'pdf_num_pages': 0})

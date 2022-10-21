@@ -1,2 +1,4 @@
 requests
 pandas
+progressbar
+PyPDF2
