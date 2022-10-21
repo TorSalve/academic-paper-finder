@@ -17,12 +17,25 @@ from urllib.parse import urlencode
 
 class Fetcher:
     def __init__(self, search_parameters={}, load_from="cache", **kwargs):
+        """Initialise the fetcher, geared to fetch a few academic papers.
+        Depending on configuration, it searches a provider (library) and downloads .pdfs (if they are open to download on the current network).
+
+        -- Warning. Some providers do not like to be searched.
+
+        Args:
+            * search_parameters (dict, optional): The search parameters used to search a particular provider. These are send with the GET or POST HTTP request to the provider. Defaults to {}.
+            * load_from (str, optional): either "cache" or "url". If "cache", the finder will look in the chached folder to find papers. This is helpful when limiting the number of requests to the provider. If "url", the finder will search online for the paper(s). Defaults to "cache".
+            * kwargs: provide additional arguments to augment the finder
+                * name (str): Name the finder. The cache folder will be named after this, to make multiple searches possible with different settings. Defaults to "finder".
+                * cache_folder (str): The base path of the cache. Defaults to "./cache".
+                * headers (dict): Headers for the HTTP request to the provider. Defaults to {}.
+                * config_name (str): The configuration to use for this search. The configuration describes how to search the fetched HTML from the provider. Config files should be placed in the ./configs folder. Defaults to the "name" kwarg.
+                * restrict_identifiers_to (list): Restict the search to a particular set of identifiers. Helpful when downloading a specific set of .pdfs, for instance. Defaults to [].
+        """
         self.load_from = load_from
         self.name = kwargs.get("name", "finder")
         self.cache_folder = kwargs.get("cache_folder", "./cache")
         self.headers = kwargs.get("headers", {})
-
-        self.per_page = kwargs.get("per_page", 500)
 
         self.search_parameters = search_parameters
         self.config_name = kwargs.get("config_name", self.name)
@@ -52,9 +65,22 @@ class Fetcher:
 
     @property
     def header_user_agent(self):
+        """The default user-agent header.
+
+        Returns:
+            str: A very common user-agent header.
+        """
         return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36"
 
     def list_file_name(self, page):
+        """generate the filepath of a searched list to be cached
+
+        Args:
+            page (int): The current page we are searching on
+
+        Returns:
+            str: the filename
+        """
         return "%s/%s/list/%s/%s.html" % (
             self.cache_folder,
             self.config_name,
@@ -63,6 +89,14 @@ class Fetcher:
         )
 
     def paper_file_name(self, identifier):
+        """generate the filepath of the found paper to be cached
+
+        Args:
+            identifier (str-like): the identifier of the paper. Typically DOI or similar. Will be sanitised.
+
+        Returns:
+            str: the filename
+        """
         safe_identifier = h.safe_filename(identifier)
         return "%s/%s/papers/%s.html" % (
             self.cache_folder,
@@ -71,6 +105,15 @@ class Fetcher:
         )
 
     def pdf_file_name(self, identifier, only_filename=False):
+        """generate the filepath of the to be saved .pdf-file
+
+        Args:
+            identifier (str-like): the identifier of the paper. Typically DOI or similar. Will be sanitised.
+            only_filename (bool, optional): If True, only returns filename without path. If False, return full path. Defaults to False.
+
+        Returns:
+            str: the filename / the filepath
+        """
         safe_identifier = h.safe_filename(identifier)
         filename = "%s.pdf" % safe_identifier
         if only_filename:
@@ -78,13 +121,38 @@ class Fetcher:
         return "%s/%s/pdfs/%s" % (self.cache_folder, self.config_name, filename)
 
     def result_file_name(self):
+        """generate the filepath of the list of parsed found papers to be cached
+
+        Returns:
+            str: the filepath
+        """
         return "%s/%s/result_%s.json" % (self.cache_folder, self.config_name, self.name)
 
     def url_get(self, url, payload={}, headers={}):
+        """Make a GET request
+
+        Args:
+            url (str): the url to query
+            payload (dict, optional): The payload to send. Defaults to {}.
+            headers (dict, optional): Request headers. Defaults to {}.
+
+        Returns:
+            response: the response
+        """
         headers = {"user-agent": self.header_user_agent, **headers}
         return requests.get(h.url_base_with_path(url), headers=headers, params=payload)
 
     def url_post_json(self, url, payload={}, headers={}):
+        """Make a POST request with JSON body
+
+        Args:
+            url (str): the url to query
+            payload (dict, optional): The payload to send. Defaults to {}.
+            headers (dict, optional): Request headers. Defaults to {}.
+
+        Returns:
+            response: the response
+        """
         headers = {
             "user-agent": self.header_user_agent,
             "accept": "*/*",
@@ -97,6 +165,16 @@ class Fetcher:
         )
 
     def url_post(self, url, payload={}, headers={}):
+        """Make a POST request with urlencoded body
+
+        Args:
+            url (str): the url to query
+            payload (dict, optional): The payload to send. Defaults to {}.
+            headers (dict, optional): Request headers. Defaults to {}.
+
+        Returns:
+            response: the response
+        """
         headers = {
             "user-agent": self.header_user_agent,
             "accept": "*/*",

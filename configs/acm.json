@@ -16,7 +16,7 @@
     },
     "pdf": "https://dl.acm.org/doi/pdf/{identifier}"
   },
-  "sleep_between_requests": 0.1,
+  "sleep_between_requests": 1,
   "regex": {
     "list": {
       "identifiers": "<span class=\"hlFld-Title\"><a href=\"/doi/([^\"]+)\">",
