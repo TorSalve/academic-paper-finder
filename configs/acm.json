@@ -4,7 +4,7 @@
     "list": {
       "_url": "http://localhost:8000/acm",
       "url": "https://dl.acm.org/action/doSearch",
-      "per-page": 50,
+      "per-page": 10,
       "params": {
         "page": "startPage",
         "per-page": "pageSize"
@@ -16,7 +16,7 @@
     },
     "pdf": "https://dl.acm.org/doi/pdf/{identifier}"
   },
-  "sleep_between_requests": 1,
+  "sleep_between_requests": 10,
   "regex": {
     "list": {
       "identifiers": "<span class=\"hlFld-Title\"><a href=\"/doi/([^\"]+)\">",

@@ -1,38 +1,45 @@
 {
-    "name": "sciencedirect",
-    "urls": {
-        "list": {
-            "_url": "http://localhost:8000/sciencedirect",
-            "url": "https://www.sciencedirect.com/search",
-            "per-page": 100,
-            "params": {
-                "page": "offset",
-                "per-page": "show",
-                "offset": true
-            }
-        },
-        "paper": {
-            "_url": "http://localhost:8000/sciencedirect/{identifier}",
-            "url": "https://www.sciencedirect.com/science/article/pii/{identifier}"
-        },
-        "pdf": "https://www.sciencedirect.com/science/article/pii/{identifier}/pdfft"
+  "name": "sciencedirect",
+  "urls": {
+    "list": {
+      "_url": "http://localhost:8000/sciencedirect",
+      "url": "https://www.sciencedirect.com/search/api",
+      "expect-json": true,
+      "per-page": 100,
+      "params": {
+        "page": "offset",
+        "per-page": "show",
+        "offset": true
+      },
+      "headers": {
+        "cookie": "search_ab%3D%7B%227%22%3A83%7D%3B%20sd_search%3DeyJhdXRoSGlzdG9yeSI6eyJwcmV2aW91c0N1c3RvbWVyIjp0cnVlLCJwcmV2aW91c0xvZ0luIjpmYWxzZX19.uRn%2Fj4TgvLEmApohDX%2FmiA2G8WsVm1yImoH3Mot2ZxY%3B%20EUID%3D9a0e2025-ca25-49a5-9beb-dc134899f982%3B%20ANONRA_COOKIE%3D1CFE6830D993FD41BBE21A0EE3E9B49665E639DE9A0CCC928AB3B1EBCD83BFB5C2BC78C6ABCF8265E4515986FCED7E7DED06A2AD36929A25%3B%20SD_REMOTEACCESS%3DeyJhY2NvdW50SWQiOiIzNDM3OCIsInRpbWVzdGFtcCI6MTY3Njk5MjQzNzI2OH0%3D%3B%20id_ab%3DAEG%3B%20mbox%3Dsession%23afcaa94500304f9080fe0f6e22069a27%231676993819%7CPC%23dadf9c%E2%80%A6ONE%7CMCOPTOUT-1676981322s%7CNONE%7CvVersion%7C5.5.0%3B%20AMCVS_4D6368F454EC41940A4C98A6%40AdobeOrg%3D1%3B%20SD_ART_LINK_STATE%3D%3Ce%3E%3Cq%3Escience%3C%2Fq%3E%3Corg%3Erslt_list%3C%2Forg%3E%3Cz%3Erslt_list_item%3C%2Fz%3E%3CsrcFr%3Erslt_list_item%3C%2FsrcFr%3E%3Crdt%3E2023%2F02%2F21%2F15%3A05%3A57%3A360%3C%2Frdt%3E%3Cenc%3EN%3C%2Fenc%3E%3C%2Fe%3E%3B%20__cf_bm%3DM6OjyEB4RRz1lOyMa.Wl6Q4C7Ex.dG8RnHktBIs8Zww-1676991810-0-AeYprYWdLuNY9Cz%20PFuD4qZKO8L21gLt3n0eWga%20%2FPDSKQp%2FjLF8pDnRSkbVK2%2Fy8kZMsIUlPUwDjKnd%20tjoRQj4SBgT9oDX0KBBXReS6oqS",
+        "DNT": "1"
+      }
     },
-    "sleep_between_requests": 0.1,
-    "regex": {
-        "list": {
-            "identifiers": "<input type=\"checkbox\" id=\"([^\"]+)\" class=\"checkbox-input select-result show-from-md checkbox-small\"",
-            "total_number_of_results": "<span class=\"search-body-results-text\">(\\d+) results<\/span>"
-        },
-        "paper": {
-            "authors": "<a class=\"author size-m workspace-trigger\" name=\"baep-author-id\\d+\" href=\"#!\">([\\S\\s]+?)<\/a>",
-            "keywords": "",
-            "title": "<span class=\"title-text\">([^<]+)<\/span>",
-            "abstract": "<h2 class=\"section-title u-h3 u-margin-l-top u-margin-xs-bottom\">Abstract<\/h2>([\\s\\S]+?)<\/p><\/div><\/div><\/div>",
-            "published_in": "<a class=\"publication-title-link\" title=\"[^\"]+\" href=\"[^\"]+\">([^<]+)<\/a>",
-            "publication_date": "<meta name=\"citation_publication_date\" content=\"([^\"]+)\" \/>",
-            "doi": "<meta name=\"citation_doi\" content=\"([^\"]+)\" \/>",
-            "citations": "",
-            "isbn": ""
-        }
+    "paper": {
+      "_url": "http://localhost:8000/sciencedirect/{identifier}",
+      "url": "https://www.sciencedirect.com/science/article/pii/{identifier}"
+    },
+    "pdf": "https://www.sciencedirect.com/science/article/pii/{identifier}/pdfft"
+  },
+  "sleep_between_requests": 0.1,
+  "json": {
+    "list": {
+      "identifiers": "searchResults.*.pii",
+      "total_number_of_results": "resultsFound"
     }
+  },
+  "regex": {
+    "paper": {
+      "authors": "<a class=\"author size-m workspace-trigger\" name=\"baep-author-id\\d+\" href=\"#!\">([\\S\\s]+?)</a>",
+      "keywords": "",
+      "title": "<span class=\"title-text\">([^<]+)</span>",
+      "abstract": "<h2 class=\"section-title u-h3 u-margin-l-top u-margin-xs-bottom\">Abstract</h2>([\\s\\S]+?)</p></div></div></div>",
+      "published_in": "<a class=\"publication-title-link\" title=\"[^\"]+\" href=\"[^\"]+\">([^<]+)</a>",
+      "publication_date": "<meta name=\"citation_publication_date\" content=\"([^\"]+)\" />",
+      "doi": "<meta name=\"citation_doi\" content=\"([^\"]+)\" />",
+      "citations": "",
+      "isbn": ""
+    }
+  }
 }
