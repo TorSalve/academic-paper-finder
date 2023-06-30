@@ -1,22 +1,30 @@
 import requests
 from urllib import parse
+from urllib.parse import urlencode
 import re
-import pandas as pd
 import json
+import PyPDF2
+import progressbar
+
+import pandas as pd
+
 import os
 import io
-import helpers as h
 import math
 import time
-import progressbar
-import sys
-import PyPDF2
 import warnings
-from urllib.parse import urlencode
+
+import helpers as h
+import query
 
 
 class Fetcher:
-    def __init__(self, search_parameters={}, load_from="cache", **kwargs):
+    def __init__(
+        self,
+        search_parameters={},
+        load_from={},
+        **kwargs,
+    ):
         """Initialise the fetcher, geared to fetch a few academic papers.
         Depending on configuration, it searches a provider (library) and downloads .pdfs (if they are open to download on the current network).
 
@@ -24,7 +32,10 @@ class Fetcher:
 
         Args:
             * search_parameters (dict, optional): The search parameters used to search a particular provider. These are send with the GET or POST HTTP request to the provider. Defaults to {}.
-            * load_from (str, optional): either "cache" or "url". If "cache", the finder will look in the chached folder to find papers. This is helpful when limiting the number of requests to the provider. If "url", the finder will search online for the paper(s). Defaults to "cache".
+            * load_from (str, optional): each argument is either "cache" or "url". If "cache", the finder will look in the chached folder to find the searched for item (will look online if not found). This is helpful when limiting the number of requests to the provider. If "url", the finder will search online. Arguments default to "cache".
+                * list (str): argument for finding the list
+                * papers (str): argument for finding the papers
+                * pdf (str): argument for downloading the pdfs
             * kwargs: provide additional arguments to augment the finder
                 * name (str): Name the finder. The cache folder will be named after this, to make multiple searches possible with different settings. Defaults to "finder".
                 * cache_folder (str): The base path of the cache. Defaults to "./cache".
@@ -32,7 +43,11 @@ class Fetcher:
                 * config_name (str): The configuration to use for this search. The configuration describes how to search the fetched HTML from the provider. Config files should be placed in the ./configs folder. Defaults to the "name" kwarg.
                 * restrict_identifiers_to (list): Restict the search to a particular set of identifiers. Helpful when downloading a specific set of .pdfs, for instance. Defaults to [].
         """
-        self.load_from = load_from
+        self.load_from = {
+            **{"list": "cache", "papers": "cache", "pdf": "cache"},
+            **load_from,
+        }
+
         self.name = kwargs.get("name", "finder")
         self.cache_folder = kwargs.get("cache_folder", "./cache")
         self.headers = kwargs.get("headers", {})
@@ -198,40 +213,40 @@ class Fetcher:
         return h.check_file_exists(self.list_file_name(page))
 
     def fetch_list(self, page):
-        if self.load_from == "cache":
+        if self.load_from["list"] == "cache":
             if self.list_file_exists(page):
                 return self.from_cache(self.list_file_name(page), self.list_is_json)
             else:
                 return self.from_url_list(page)
-        elif self.load_from == "url":
+        elif self.load_from["list"] == "url":
             return self.from_url_list(page)
         else:
-            raise Exception("load_from could not be found")
+            raise Exception("load_from['list'] could not be found")
 
     def fetch_paper(self, identifier):
-        if self.load_from == "cache":
+        if self.load_from["papers"] == "cache":
             if self.paper_file_exists(identifier):
                 return self.from_cache(
                     self.paper_file_name(identifier), self.paper_is_json
                 )
             else:
                 return self.from_url_paper(identifier)
-        elif self.load_from == "url":
+        elif self.load_from["papers"] == "url":
             return self.from_url_paper(identifier)
         else:
-            raise Exception("load_from could not be found")
+            raise Exception("load_from['papers'] could not be found")
 
     def fetch_pdf(self, identifier):
-        if self.load_from == "cache":
+        if self.load_from["pdf"] == "cache":
             if self.pdf_file_exists(identifier):
                 with open(self.pdf_file_name(identifier), "rb") as f:
                     return f.read()
             else:
                 return self.from_url_pdf(identifier)
-        elif self.load_from == "url":
+        elif self.load_from["pdf"] == "url":
             return self.from_url_pdf(identifier)
         else:
-            raise Exception("load_from could not be found")
+            raise Exception("load_from['pdf'] could not be found")
 
     def from_cache(self, path, is_json):
         html = h.read_file(path)
@@ -239,28 +254,28 @@ class Fetcher:
         return html if should_not_be_decoded else json.loads(html)
 
     def from_url_pdf(self, identifier):
-        sleep_for = self.get_config("sleep_between_requests")
         r = requests.get(self.pdf_url(identifier))
         file_name = self.pdf_file_name(identifier)
         h.ensure_path_exists(file_name)
         with open(file_name, "wb") as f:
             f.write(r.content)
+        sleep_for = h.sleep_for_sec(self.get_config("sleep_between_requests"))
         time.sleep(sleep_for)
         return r.content
 
     def from_url_list(self, page):
-        sleep_for = self.get_config("sleep_between_requests")
         html = self.fetch_list_from_url(page)
         h.write_file(self.list_file_name(page), html)
         shouldNotBeDecoded = not self.list_is_json or isinstance(html, dict)
+        sleep_for = h.sleep_for_sec(self.get_config("sleep_between_requests"))
         time.sleep(sleep_for)
         return html if shouldNotBeDecoded else json.loads(html)
 
     def from_url_paper(self, identifier):
-        sleep_for = self.get_config("sleep_between_requests")
         html = self.fetch_paper_from_url(identifier)
         h.write_file(self.paper_file_name(identifier), html)
         shouldNotBeDecoded = not self.paper_is_json or isinstance(html, dict)
+        sleep_for = h.sleep_for_sec(self.get_config("sleep_between_requests"))
         time.sleep(sleep_for)
         return html if shouldNotBeDecoded else json.loads(html)
 
@@ -362,11 +377,12 @@ class Fetcher:
         is_pre_json = "embedded_json" in self.get_config(
             "preprocessing.paper.*.type", []
         )
-        return (
+        value = (
             fun(self.get_config("regex.paper.%s" % key, default=default), _paper)
             if not is_pre_json
             else h.get_dict_field(_paper, self.get_config("json.paper.%s" % key), "")
         )
+        return h.safe_csv(value)
 
     def authors(self, _paper):
         return list(
@@ -421,10 +437,8 @@ class Fetcher:
         if len(self.postprocessing_paper) > 0:
             for i, post in enumerate(self.postprocessing_paper):
                 if post["type"] == "query":
-                    query = h.get_dict_field(
-                        self.postprocessing_paper, f"{i}.query", {}
-                    )
-                    f = h.analyze_query(paper, query)
+                    qry = h.get_dict_field(self.postprocessing_paper, f"{i}.query", {})
+                    f = query.analyze(paper, qry)
                     paper = paper if f else None
         return paper
 
@@ -490,9 +504,9 @@ class Fetcher:
             "total_results": self.total_number_of_results(_list),
         }
 
-        pages_to_fetch = 0  # math.ceil(result["total_results"] / self.per_page) - 1
+        pages_to_fetch = math.ceil(result["total_results"] / self.per_page) - 1
 
-        sleep_for = self.get_config("sleep_between_requests")
+        sleep_for = h.sleep_for_sec(self.get_config("sleep_between_requests"))
         print(
             "This will take at least %.2f minutes if the cache is clean"
             % ((result["total_results"] * sleep_for) / 60)
@@ -546,8 +560,8 @@ class Fetcher:
         else:
             df = pd.DataFrame(columns=fields)
 
-        print(f"Exporting {self.name} - {self.config_name} paper to csv.")
-        total = h.get_progressbar(len(result["papers"]), "pdf")
+        print(f"Exporting {self.config_name} - {self.name} paper to csv.")
+        total = h.get_progressbar(len(result["papers"]), "csv", "Exporting")
         total.start()
         for i, paper in enumerate(result["papers"]):
             if (
@@ -590,10 +604,8 @@ class Fetcher:
         save_folder = f"{save_folder}"
         h.ensure_path_exists(save_folder, True)
 
-        sleep_for = self.get_config("sleep_between_requests")
-
         print(f"Downloading {self.name} - {self.config_name} paper pdfs.")
-        sleep_for = self.get_config("sleep_between_requests")
+        sleep_for = h.sleep_for_sec(self.get_config("sleep_between_requests"))
         print(
             "This will take at least %.2f hours if all papers need to be downloaded"
             % ((result["total_results"] * sleep_for) / 60 / 60)
@@ -613,7 +625,7 @@ class Fetcher:
             if num_pages_key in paper and not override:
                 continue
 
-            file_name = h.safe_filename(f"{paper['identifier']}.pdf")
+            file_name = h.safe_filename(f"{paper[save_name]}.pdf")
             file_name = f"{save_folder}/{file_name}"
 
             content = self.fetch_pdf(paper["identifier"])

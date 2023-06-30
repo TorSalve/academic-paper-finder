@@ -3,29 +3,32 @@
   "urls": {
     "list": {
       "_url": "http://localhost:8000/springer",
-      "url": "https://link.springer.com/search/page/{page}",
+      "url": "https://link.springer.com/search",
       "per-page": 20,
-      "start-page": 1
+      "start-page": 1,
+      "params": {
+        "page": "page"
+      }
     },
     "paper": {
       "_url": "http://localhost:8000/springer/{identifier}",
-      "url": "https://link.springer.com/article/{identifier}"
+      "url": "https://link.springer.com/chapter/{identifier}"
     },
     "pdf": "https://link.springer.com/content/pdf/{identifier}.pdf"
   },
   "sleep_between_requests": 0.1,
   "regex": {
     "list": {
-      "identifiers": "<a class=\"title\" href=\"/article/([^\"]+)\">",
-      "total_number_of_results": "<h1 id=\"number-of-search-results-and-search-terms\">\\s+<strong>(\\d+)</strong>"
+      "identifiers": "<h3 class=\"c-listing__title\" data-test=\"title\">[\\s]+<a href=\"/chapter/([^\"]+)\"",
+      "total_number_of_results": "Showing [\\d-]+ of ([\\d]+) results"
     },
     "paper": {
       "authors": "<a data-test=\"author-name\" data-track=\"click\" data-track-action=\"open author\" data-track-label=\"link\" href=\"[^\"]+\" data-author-popup=\"[^\"]+\"\\s*[data\\-corresp\\-id=\"c1\"]*>([^<]+)<",
-      "title": "<h1 class=\"c-article-title\" data-test=\"article-title\" data-article-title=\"\">([^<]+)</h1>",
-      "abstract": "<div class=\"c-article-section__content\" id=\"Abs1-content\"><p>([\\s\\S]+?)</p></div>",
+      "title": "<h1 class=\"c-article-title\" data-test=\"chapter-title\" data-chapter-title=\"\">([^<]+)<\\/h1>",
+      "abstract": "<div class=\"c-article-section__content\" id=\"Abs1-content\"><p>([\\s\\S]+?)</p>",
       "publication_date": "<time datetime=\"[^\"]+\">([^<]+)</time></a>",
       "published_in": "<a data-test=\"journal-link\" href=\"[^\"]+\"><i data-test=\"journal-title\">([^<]+)</i></a>",
-      "doi": "<meta name=\"prism\\.doi\" content=\"doi:([^\"]+)\"/>",
+      "doi": "<meta name=\"DOI\" content=\"([^\"]+)\"/>",
       "citations": "",
       "isbn": "",
 

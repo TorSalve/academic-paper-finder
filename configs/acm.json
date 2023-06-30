@@ -16,7 +16,10 @@
     },
     "pdf": "https://dl.acm.org/doi/pdf/{identifier}"
   },
-  "sleep_between_requests": 10,
+  "sleep_between_requests": {
+    "lower_bound": 10,
+    "upper_bound": 15
+  },
   "regex": {
     "list": {
       "identifiers": "<span class=\"hlFld-Title\"><a href=\"/doi/([^\"]+)\">",
@@ -26,8 +29,8 @@
       "authors": "<div class=\"author-data\">[\\s\\S]+?</div>",
       "keywords": "<li><a href=\"/keyword/[^\"]+\" title=\"[^\"]+\" class=\"badge-type\">([^<]+)</a></li>",
       "title": "<h1 class=\"citation__title\">([^<]+)</h1>",
-      "abstract": "<div class=\"abstractSection abstractInFull\"><p>[\\s\\S]+?<!-- /abstract content -->",
-      "publication_date": "<div class=\"section__separator\"><h3 class=\"left-bordered-title\">Publication History</h3><div class=\"section__content\"><ul class=\"rlist\"><li>Published: ([^<]+)</li></ul></div></div>",
+      "abstract": "<div class=\"abstractSection abstractInFull\">[\\s]*<p>[\\s\\S]+?</p>",
+      "publication_date": "<ul class=\"rlist article-chapter-history-list\"><li><span class=\"item_label\">Published:</span> ([^<]+)</li>",
       "published_in": "<div class=\"book-meta\">([^<]+)</div>",
       "citations": "<span class=\"citation\"><i class=\"icon-quote\"></i><span>(\\d+)</span>",
       "isbn": "<div class=\"flex-container\"><span class=\"bold\">ISBN:</span><span class=\"space\">([^<]+)</span></div>",
