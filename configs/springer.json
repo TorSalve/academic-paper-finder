@@ -19,12 +19,12 @@
   "sleep_between_requests": 0.1,
   "regex": {
     "list": {
-      "identifiers": "<h3 class=\"c-listing__title\" data-test=\"title\">[\\s]+<a href=\"/chapter/([^\"]+)\"",
+      "identifiers": "<h3 class=\"c-listing__title\" data-test=\"title\">[\\s]+<a href=\"[\\s\\S]+?/([^\"]+)\"",
       "total_number_of_results": "Showing [\\d-]+ of ([\\d]+) results"
     },
     "paper": {
       "authors": "<a data-test=\"author-name\" data-track=\"click\" data-track-action=\"open author\" data-track-label=\"link\" href=\"[^\"]+\" data-author-popup=\"[^\"]+\"\\s*[data\\-corresp\\-id=\"c1\"]*>([^<]+)<",
-      "title": "<h1 class=\"c-article-title\" data-test=\"chapter-title\" data-chapter-title=\"\">([^<]+)<\\/h1>",
+      "title": "<h1 class=\"c-article-title\" data-test=\"[^-]+-title\" data-[^-]+-title=\"\">([^<]+)<\\/h1>",
       "abstract": "<div class=\"c-article-section__content\" id=\"Abs1-content\"><p>([\\s\\S]+?)</p>",
       "publication_date": "<time datetime=\"[^\"]+\">([^<]+)</time></a>",
       "published_in": "<a data-test=\"journal-link\" href=\"[^\"]+\"><i data-test=\"journal-title\">([^<]+)</i></a>",

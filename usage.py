@@ -18,100 +18,134 @@ acm_params = {
 }
 
 finders = [
-    # UIST
-    {
-        "name": "uist",
-        "config_name": "acm",
-        "search_parameters": {
-            **{
-                "SpecifiedLevelConceptID": "119271",
-            },
-            **acm_params,
-        },
-    },
-    # CHI
-    {
-        "name": "chi",
-        "config_name": "acm",
-        "search_parameters": {
-            **{
-                "SpecifiedLevelConceptID": "119596",
-            },
-            **acm_params,
-        },
-    },
-    # ToCHI
-    {
-        "name": "tochi",
-        "config_name": "acm",
-        "search_parameters": {
-            **{
-                "SeriesKey": "tochi",
-            },
-            **acm_params,
-        },
-    },
-    # WorldHaptics + ToH + HAPTICS Symposium
-    {
-        "name": "worldhaptics",
-        "config_name": "ieee",
-        "search_parameters": {
-            "action": "search",
-            "matchBoolean": True,
-            "queryText": '("Publication Title":meaningful haptics) OR ("Abstract":meaningful haptics)',
-            "highlight": True,
-            "returnType": "SEARCH",
-            "matchPubs": True,
-            "rowsPerPage": "75",
-            "pageNumber": "1",
-            "refinements": [
-                "PublicationTitle:IEEE Transactions on Haptics",
-                "PublicationTitle:2021 IEEE World Haptics Conference (WHC)",
-                "PublicationTitle:2019 IEEE World Haptics Conference (WHC)",
-                "PublicationTitle:2020 IEEE Haptics Symposium (HAPTICS)",
-                "PublicationTitle:2022 IEEE Haptics Symposium (HAPTICS)",
-            ],
-            "ranges": ["2013_2023_Year"],
-            "returnFacets": ["ALL"],
-        },
-        "headers": {
-            "Cookie": "AMCV_8E929CC25A1FB2B30A495C97%40AdobeOrg=1687686476%7CMCIDTS%7C19364%7CMCMID%7C24325535634873532558291481124988846596%7CMCAID%7CNONE%7CMCOPTOUT-1673019272s%7CNONE%7CvVersion%7C3.0.0; cookieconsent_status=dismiss; JSESSIONID=gGr9SbMojMA9XdtFK-B5lbtVjCfoJwcULm7Hl8yxt-3eF7bWONdD!119812709; ipCheck=2620:101:f000:700:0:0:3f81:c714; ERIGHTS=fq07dGkmXVlj0x2Bvl9upDxxmCXQpTvs19O*BtyyzCwEFu3QA9sK6x2B3YxxfnGFu53gZbDxxg63iINbnVsx3D-18x2d1DdquAViiL9xxCitNDM7HnQx3Dx3DsaFXNx2BjkVmS5bKrRWVbHJwx3Dx3D-seCuihlon4Yn6ravae9KzQx3Dx3D-x2BoJmAJK1Z3DbmTWzFvGVAAx3Dx3D; WLSESSION=220357260.20480.0000; TS01b03060=012f35062392a3d57c81cf2c4b561c916b773ceabd8f33d88bdcf197129ba2a4b4c785662107cefaeb52d73b5c20f48f4f50642ac7; TSaeeec342027=080f8ceb8aab20001cee1f7e14abcea6011b151a3a50c4a98896445060225a998aa4da993bf1c18a08e2be40471130000039e88fece3da99d35796d85bcc79ac33d1ac271523cb7655fd14cd6e25e800eb37b7fc5295ce4b48abaabcbfccf456; utag_main=v_id:0188fd49b539000308fb1862327c05050003600d00bd0; ipList=2620:101:f000:700:0:0:3f81:c714; fp=49c339e05f860a34d7790256ea9b0b21; xpluserinfo=eyJpc0luc3QiOiJ0cnVlIiwiaW5zdE5hbWUiOiJVbml2ZXJzaXR5IG9mIFdhdGVybG9vIiwicHJvZHVjdHMiOiJJRUx8RHJhZnR8RUJPT0tTOjE5NzQ6MjAxNXxNSVRQOjIwMTM6MjAxOXxDT05GQVJDSDoxOTUxOjIwMDB8SlJOTEFSQ0g6MTg4NDoxOTk5fElCTToxODcyOjIwMjB8U0FFOjE5OTA6MjAyM3xNSVRQOjIwMjE6MjAyMnxFQk9PS1M6MjAyMToyMDIzfFdJTEVZVEVMRUNPTToyMDIxOjIwMjN8VkRFfE5PS0lBIEJFTEwgTEFCU3wifQ==; seqId=8628"
-        },
-    },
+    # # UIST
+    # {
+    #     "name": "uist",
+    #     "config_name": "acm",
+    #     "search_parameters": {
+    #         **{
+    #             "SpecifiedLevelConceptID": "119271",
+    #         },
+    #         **acm_params,
+    #     },
+    # },
+    # # CHI
+    # {
+    #     "name": "chi",
+    #     "config_name": "acm",
+    #     "search_parameters": {
+    #         **{
+    #             "SpecifiedLevelConceptID": "119596",
+    #         },
+    #         **acm_params,
+    #     },
+    # },
+    # # ToCHI
+    # {
+    #     "name": "tochi",
+    #     "config_name": "acm",
+    #     "search_parameters": {
+    #         **{
+    #             "SeriesKey": "tochi",
+    #         },
+    #         **acm_params,
+    #     },
+    # },
+    # # WorldHaptics + ToH + HAPTICS Symposium
+    # {
+    #     "name": "worldhaptics",
+    #     "config_name": "ieee",
+    #     "search_parameters": {
+    #         "action": "search",
+    #         "matchBoolean": True,
+    #         "queryText": '("Publication Title":meaningful haptics) OR ("Abstract":meaningful haptics)',
+    #         "highlight": True,
+    #         "returnType": "SEARCH",
+    #         "matchPubs": True,
+    #         "rowsPerPage": "75",
+    #         "pageNumber": "1",
+    #         "refinements": [
+    #             "PublicationTitle:IEEE Transactions on Haptics",
+    #             "PublicationTitle:2021 IEEE World Haptics Conference (WHC)",
+    #             "PublicationTitle:2019 IEEE World Haptics Conference (WHC)",
+    #             "PublicationTitle:2020 IEEE Haptics Symposium (HAPTICS)",
+    #             "PublicationTitle:2022 IEEE Haptics Symposium (HAPTICS)",
+    #         ],
+    #         "ranges": ["2013_2023_Year"],
+    #         "returnFacets": ["ALL"],
+    #     },
+    #     "headers": {
+    #         "Cookie": "AMCV_8E929CC25A1FB2B30A495C97%40AdobeOrg=1687686476%7CMCIDTS%7C19364%7CMCMID%7C24325535634873532558291481124988846596%7CMCAID%7CNONE%7CMCOPTOUT-1673019272s%7CNONE%7CvVersion%7C3.0.0; cookieconsent_status=dismiss; JSESSIONID=gGr9SbMojMA9XdtFK-B5lbtVjCfoJwcULm7Hl8yxt-3eF7bWONdD!119812709; ipCheck=2620:101:f000:700:0:0:3f81:c714; ERIGHTS=fq07dGkmXVlj0x2Bvl9upDxxmCXQpTvs19O*BtyyzCwEFu3QA9sK6x2B3YxxfnGFu53gZbDxxg63iINbnVsx3D-18x2d1DdquAViiL9xxCitNDM7HnQx3Dx3DsaFXNx2BjkVmS5bKrRWVbHJwx3Dx3D-seCuihlon4Yn6ravae9KzQx3Dx3D-x2BoJmAJK1Z3DbmTWzFvGVAAx3Dx3D; WLSESSION=220357260.20480.0000; TS01b03060=012f35062392a3d57c81cf2c4b561c916b773ceabd8f33d88bdcf197129ba2a4b4c785662107cefaeb52d73b5c20f48f4f50642ac7; TSaeeec342027=080f8ceb8aab20001cee1f7e14abcea6011b151a3a50c4a98896445060225a998aa4da993bf1c18a08e2be40471130000039e88fece3da99d35796d85bcc79ac33d1ac271523cb7655fd14cd6e25e800eb37b7fc5295ce4b48abaabcbfccf456; utag_main=v_id:0188fd49b539000308fb1862327c05050003600d00bd0; ipList=2620:101:f000:700:0:0:3f81:c714; fp=49c339e05f860a34d7790256ea9b0b21; xpluserinfo=eyJpc0luc3QiOiJ0cnVlIiwiaW5zdE5hbWUiOiJVbml2ZXJzaXR5IG9mIFdhdGVybG9vIiwicHJvZHVjdHMiOiJJRUx8RHJhZnR8RUJPT0tTOjE5NzQ6MjAxNXxNSVRQOjIwMTM6MjAxOXxDT05GQVJDSDoxOTUxOjIwMDB8SlJOTEFSQ0g6MTg4NDoxOTk5fElCTToxODcyOjIwMjB8U0FFOjE5OTA6MjAyM3xNSVRQOjIwMjE6MjAyMnxFQk9PS1M6MjAyMToyMDIzfFdJTEVZVEVMRUNPTToyMDIxOjIwMjN8VkRFfE5PS0lBIEJFTEwgTEFCU3wifQ==; seqId=8628"
+    #     },
+    # },
     # Eurohaptics
+    # {
+    #     "name": "eurohaptics",
+    #     "config_name": "springer",
+    #     "search_parameters": {
+    #         "use-oscar-shared-search": "true",
+    #         "query": "meaningful haptics Eurohaptics",
+    #         "content-type": "ConferencePaper",
+    #         "date": "custom",
+    #         "dateFrom": "2013",
+    #         "dateTo": "2023",
+    #         "language": "En",
+    #     },
+    #     "postprocessing_paper": [
+    #         {
+    #             "type": "query",
+    #             "query": {
+    #                 "should": [
+    #                     {
+    #                         "must": [
+    #                             {"match": {"title": "meaningful"}},
+    #                             {"match": {"title": "haptics"}},
+    #                         ]
+    #                     },
+    #                     {
+    #                         "must": [
+    #                             {"match": {"abstract": "meaningful"}},
+    #                             {"match": {"abstract": "haptics"}},
+    #                         ]
+    #                     },
+    #                 ]
+    #             },
+    #         }
+    #     ],
+    # },
     {
-        "name": "eurohaptics",
+        "name": "springer",
         "config_name": "springer",
         "search_parameters": {
             "use-oscar-shared-search": "true",
-            "query": "meaningful haptics Eurohaptics",
-            "content-type": "ConferencePaper",
+            "query": '"haptic experience" AND design',
+            "content-type": ["ConferencePaper", "Article"],
             "date": "custom",
             "dateFrom": "2013",
             "dateTo": "2023",
             "language": "En",
         },
-        "postprocessing_paper": [
-            {
-                "type": "query",
-                "query": {
-                    "should": [
-                        {
-                            "must": [
-                                {"match": {"title": "meaningful"}},
-                                {"match": {"title": "haptics"}},
-                            ]
-                        },
-                        {
-                            "must": [
-                                {"match": {"abstract": "meaningful"}},
-                                {"match": {"abstract": "haptics"}},
-                            ]
-                        },
-                    ]
-                },
-            }
-        ],
+        # "postprocessing_paper": [
+        #     {
+        #         "type": "query",
+        #         "query": {
+        #             "should": [
+        #                 {
+        #                     "must": [
+        #                         {"match": {"title": "meaningful"}},
+        #                         {"match": {"title": "haptics"}},
+        #                     ]
+        #                 },
+        #                 {
+        #                     "must": [
+        #                         {"match": {"abstract": "meaningful"}},
+        #                         {"match": {"abstract": "haptics"}},
+        #                     ]
+        #                 },
+        #             ]
+        #         },
+        #     }
+        # ],
     },
     # # VRST
     # {
@@ -160,7 +194,7 @@ finders = [
 
 tic = time.perf_counter()
 now = datetime.now()
-fp = f"./output/meaningful-haptics-title-abstract.csv"
+fp = f"./output/springer.csv"
 
 for finder in finders:
     find = Fetcher(load_from={"list": "cache"}, **finder)

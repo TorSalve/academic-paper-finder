@@ -5,6 +5,7 @@ import re
 import json
 import PyPDF2
 import progressbar
+import validators
 
 import pandas as pd
 
